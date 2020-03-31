@@ -4,17 +4,17 @@ The code in this repository, once defined a serial manipulator — i.e. a robot 
 
 ### Table of contents
 
-* [Download and usage](#download_and_usage)
-* [Robot definition](#robot_definition)
+* [Download and usage](#download-and-usage)
+* [Robot definition](#robot-definition)
     * [Conventions](#conventions)
     * [Kinematics](#kinematics)
     * [Dynamics](#dynamics)
-* [Computed expressions](#computed_expressions)
-    * [Kinematics](#kinematics)
-    * [Dynamics](#dynamics)
-* [Applications examples](#applications_examples)
-    * [Joint space dynamical model](#joint_space_dynamical_model)
-    * [Impedance control](#impedance_control)
+* [Computed expressions](#computed-expressions)
+    * [Kinematics](#kinematics-1)
+    * [Dynamics](#dynamics-1)
+* [Applications examples](#applications-examples)
+    * [Joint space dynamical model](#joint-space-dynamical-model)
+    * [Impedance control](#impedance-control)
 * [References](#references)
 * [Contributing](#contributing)
 
