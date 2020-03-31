@@ -1,15 +1,11 @@
-function [robot] = get_manipulator(DHParams, jointTypes, coms, masses, Is, g0, base)
-%ROBOT Symbolically computes some matrixes relative to the specified robot.
+function [robot] = get_manipulator(DHParams, jointTypes, base)
+%GET MANIPULATOR Symbolically computes the expressions of kinematics quantities relative to the specified manipulator.
 
     %% Input parsing
 
     robot = struct();
     robot.fixedDHParams = DHParams;
     robot.jointTypes = jointTypes;
-    robot.coms = coms;
-    robot.masses = masses;
-    robot.Is = Is;
-    robot.g0 = g0;
     robot.base = base;
     n_links = size(DHParams, 1);
     q = sym('q',[n_links,1]);
@@ -76,81 +72,22 @@ function [robot] = get_manipulator(DHParams, jointTypes, coms, masses, Is, g0, b
     end
     robot.jacobian = jacobian;
 
-    % end-effector, geometric
+    % End-effector jacobian, geometric
     J = subs(jacobian, point, p{end});
     J = simplify(J);
     robot.J = J;
-    % end-effector, analytical
+    % End-effector jacobian, analytical
     % Ja = J; <- this shortcut can be used when manipulator is planar
     Ja = arrayfun(@(i) diff([p{end}; euler{end}], q(i)), 1:n_links, 'un', 0);
     Ja = cat(2, Ja{:});
     Ja = simplify(Ja);
     robot.Ja = Ja;
 
-    % centers of mass, geometric
-    Jp = cell(n_links,1);
-    for i = 1:n_links
-        pcom = T{i}*[coms{i}; 1];
-        Jp{i} = subs(jacobian, point, pcom(1:3));
-        Jp{i} = [Jp{i}(:,1:i) zeros(6,n_links-i)];
-        Jp{i} = simplify(Jp{i});
-    end
-    robot.Jp = Jp;
-
-    %% Inertia and other forces
-
-    B = zeros(n_links);
-    g = zeros(n_links,1);
-    for i = 1:n_links
-        Jpos = Jp{i}(1:3,:);
-        Jor = Jp{i}(4:6,:);
-        I = T{i}(1:3,1:3) * Is{i} * T{i}(1:3,1:3)';
-        B = B + simplify(masses(i)*Jpos'*Jpos + Jor'*I*Jor);
-        g = g - (masses(i)*g0'*Jpos)';
-    end 
-    B = simplify(B);
-    robot.B = B;
-    robot.g = g;
-    
-    Bder = arrayfun(@(i) diff(B, q(i)), 1:n_links, 'un', 0);
-    Bder = cat(3, Bder{:});
-    C = 0.5 * (Bder + permute(Bder,[1 3 2]) - permute(Bder,[3 1 2]));  % Bder{k}(i,j) + Bder{j}(i,k) - Bder{i}(j,k)
-    % C = simplify(C); % may be avoided cause it's not involved in inverses
-    robot.C = C;
-
-    %% Inverses
-
-    % Binv = inv(rewrite(B,'exp'));
-    % Binv = simplify(rewrite(Binv,'exp')); % 40 min :O
-    % robot.Binv = Binv;%matlabFunction(Binv);
-    
+    % Geometric jacobian inverse
     % assume(q, 'real');
     % Jpinv = pinv(J);
     % Jpinv = simplify(rewrite(Jpinv,'exp'));
     % robot.Jpinv = Jpinv
-    
-    % Ba = inv(Ja*Binv*Ja');
-    
-    %% Jacobian derivative
-    
-    % generate symbolic time-dependent q vector
-    symstr = '[';
-    for i = 1:n_links
-        symstr = [symstr 'q' num2str(i) '(t); '];
-    end
-    symstr = [symstr ']'];
-    qt = str2sym(symstr);
-    robot.qt = qt;
-    % substitute q with q(t) and differentiate
-    time_dependant_J = subs(Ja, q, qt);
-    Ja_dot = diff(time_dependant_J, sym('t'));
-    % substitute diff(q,t) with q_dot
-    q_dot = sym('q_dot', [n_links,1]);
-    Ja_dot = subs(Ja_dot, diff(qt, sym('t')), q_dot);
-    % substitute back q(t) with q
-    Ja_dot = subs(Ja_dot, qt, q);
-    robot.q_dot = q_dot;
-    robot.Ja_dot = Ja_dot;
 
 end
 
